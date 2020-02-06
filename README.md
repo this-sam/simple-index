@@ -1,2 +1,2 @@
 # Simple-Index
-A simple library for storing objects client side.
+A simple api for storing objects client side.

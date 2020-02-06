@@ -1,0 +1,29 @@
+{
+  "name": "simple-index",
+  "version": "1.0.2",
+  "description": "A simple library for storing JSON objects client side.",
+  "main": "index.js",
+  "files": [
+    "cjs/"
+  ],
+  "scripts": {
+    "start": "node scripts/start.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "node scripts/build.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JLBaggins/simple-index.git"
+    
+  },
+  "keywords": [
+    "indexeddb",
+    "client side"
+  ],
+  "author": "Jacob Speer <jacoblspeer@gmail.com>",
+  "license": "GPL-3.0-or-later",
+  "bugs": {
+    "url": "https://github.com/JLBaggins/simple-index/issues"
+  },
+  "homepage": "https://github.com/JLBaggins/simple-index#readme"
+}
