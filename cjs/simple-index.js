@@ -1,9 +1,50 @@
 "use strict";
 
 
-console.log(process.cwd());
+let config;
 
-const mode = "development";
+try{
+	config = require('simple-index.config');	
+}
+catch {
+	config = require('../../../simple-index.config');
+}
+catch {
+	config = require('./simple-index.config');
+}
+catch {
+	error("simple-index.config.js not found (ignore this error if not using a config file). If using a config file, try placing it in the root folder of the app. If this error still occurs, try placing it in the root folder of the simple-index module with the index.js file. If using webpack, include a resolve alias in the webpack.config.js file.");
+}
+
+const simpleDB = {
+	schema: {
+		'simpleDB' : {
+			'objStore' : {
+				key : 'key'
+			},
+		}
+	},
+	mode : 'production',
+	simple_on : true
+};
+
+if (!config) {
+	config = simpleDB;
+} else {
+	config.schema
+};
+
+let mode;
+if (config.mode) {
+ 	mode = config.mode;
+} else {
+	mode = 'production';
+};
+
+let simple_on = true;
+if (config.simple_on === false)  {
+	simple_on = false
+}
 
 
 function error(message) {
@@ -15,11 +56,11 @@ function error(message) {
 
 function databaseOnError(event) {
 	error(event);
-	error('IndexedDB database error: ' + event.target.errorCode);
+	error('simple-indexedDB database error, indexedDB error: ' + event.target.errorCode);
 };
 
 
-function getCache(db_name, db_obj, callback) {
+function getCache(db_name, callback) {
 	
 	const cache = window.indexedDB.open('current_schema', 1);
 		
@@ -39,11 +80,11 @@ function getCache(db_name, db_obj, callback) {
 			
 			objectStore.transaction.oncomplete = function(event) {
 				const cacheObjectStore = db.transaction("cache", "readwrite").objectStore("cache");
-				for (let db_obj_name in db_obj) {
+				for (let db_obj_name in config.schema) {
 					let new_db_obj_cache = {
 						version: 1,
-						name: db_name,
-						current: db_obj[db_obj_name]
+						name: db_obj_name,
+						current: config.schema[db_obj_name]
 					};
 		      cacheObjectStore.add(new_db_obj_cache);					
 				};
@@ -82,25 +123,25 @@ function getCache(db_name, db_obj, callback) {
 				cached_db_obj = {
 					version: 1,
 					name: db_name,
-					current: db_obj[db_name]
+					current: config.schema[db_name]
 				};
 				cache_objectStore.put(cached_db_obj);
 				window.indexedDB.deleteDatabase(db_name);
-			} else if (cached_db_obj.current != db_obj[db_name]) {
+			} else if (cached_db_obj.current != config.schema[db_name]) {
 				cached_db_obj.version += 1;
 				let remove = [];
 				for (let objstore in cached_db_obj.current) {
-					if (!objstore in db_obj[db_name]) {
+					if (!objstore in config.schema[db_name]) {
 						remove.push(objstore);
 					};
 				};
 				let create = [];
-				for (let objstore in db_obj[db_name]) {
+				for (let objstore in config.schema[db_name]) {
 					if (!objstore in cached_db_obj.current) {
 						create.push(objstore);
 					};
 				};
-				cached_db_obj.current = db_obj[db_name];
+				cached_db_obj.current = config.schema[db_name];
 				cache_objectStore.put(cached_db_obj);
 				cached_db_obj.remove = remove;
 				cached_db_obj.create = create;
@@ -111,11 +152,10 @@ function getCache(db_name, db_obj, callback) {
 };
 
 
-
-function openDatabase(db_obj, callback) {
+function openDatabase(callback) {
 			
-	const db_name = db_obj.name;
-	const request = window.indexedDB.open(db_name, db_obj.version);
+	const db_name = config.schema.name;
+	const request = window.indexedDB.open(db_name, config.schema.version);
 	
 	request.onerror = function(event) {
 		databaseOnError(event);
@@ -128,15 +168,15 @@ function openDatabase(db_obj, callback) {
 			databaseOnError(event);
 		};
 
-		if (event.oldVersion < db_obj.version) {
-			for (let objstore in db_obj.remove) {
+		if (event.oldVersion < config.schema.version) {
+			for (let objstore in config.schema.remove) {
 				db.deleteObjectStore(objstore);
 			}; 
-			for (let objStore in db_obj.create) {
-				let objectStore = db.createObjectStore(objStore, { keyPath: db_obj.current[objStore].key});
-				if (db_obj.current[objStore].indexes)
-				for (let objStore_index in db_obj.current[objStore].indexes)
-					objectStore.createIndex(objStore_index, objStore_index, {unique: db_obj.current[objStore].indexes[objStore_index]})
+			for (let objStore in config.schema.create) {
+				let objectStore = db.createObjectStore(objStore, { keyPath: config.schema.current[objStore].key});
+				if (config.schema.current[objStore].indexes)
+				for (let objStore_index in config.schema.current[objStore].indexes)
+					objectStore.createIndex(objStore_index, objStore_index, {unique: config.schema.current[objStore].indexes[objStore_index]})
 			};
 		};
  	};
@@ -196,9 +236,9 @@ function openDBRequest(objstore, db_request, arg, callback) {
 }; 
 
 
-function beginTransaction(arg, objstore_name, db_obj, db_request, callback) {
+function beginTransaction(arg, objstore_name, db_request, callback) {
 	console.log('bt');
-	openDatabase(db_obj, (db) => {
+	openDatabase((db) => {
 		openTransaction(db, objstore_name, (transaction) => {
 			openObjectStore(transaction, objstore_name, (objstore) => {
 				openDBRequest(objstore, db_request, arg, (err, response) => {
@@ -210,8 +250,8 @@ function beginTransaction(arg, objstore_name, db_obj, db_request, callback) {
 };
 	
 
-function makeRequest(arg, objstore_name, db_name, db_request, db_obj, callback) {
-	getCache(db_name, db_obj, (cached_db) => {
+function makeRequest(arg, objstore_name, db_name, db_request, callback) {
+	getCache(db_name, (cached_db) => {
 		console.log(cached_db);
 		beginTransaction(arg, objstore_name, cached_db, db_request, (err, response) => {
 			callback(err, response)
@@ -220,83 +260,87 @@ function makeRequest(arg, objstore_name, db_name, db_request, db_obj, callback) 
 };
 	
 
-function commitObject(data, objstore_name, db_name, db_obj, callback) {
+function commitObject(data, objstore_name, db_name, callback) {
 	console.log('obj');
-	makeRequest(data, objstore_name, db_name, 'put', db_obj, (err, response) => {
+	makeRequest(data, objstore_name, db_name, 'put', (err, response) => {
 		callback(err, response);
 	});
 };
 
 
-function commitMultObject(data_array, objstore_name, db_name, db_obj, callback) {
-	let err_cache = false;
-	for (let data in data_array) {
-		commitData(data, objstore_name, db_name, db_obj, (err, response) => {
-			if (err) {
-				err_cache = true;
-				callback(err, false);
-			};
-		});
-	};
-	if(!err_cache) {
-		callback(null, true);
-	};
-};
-
-
-function getObject(key, objstore_name, db_name, db_obj, callback){
-	makeRequest(key, objstore_name, db_name, db_obj, 'get', (err, response) => {
+function getObject(key, objstore_name, db_name, callback){
+	makeRequest(key, objstore_name, db_name, 'get', (err, response) => {
 		callback(response);
 	});
 };
 
 
-function getObjectStore(objstore_name, db_name, db_obj, callback) {
-	makeRequest(null, objstore_name, db_name, db_obj, 'getAll', (err, response) => {
+function getObjectStore(objstore_name, db_name, callback) {
+	makeRequest(null, objstore_name, db_name, 'getAll', (err, response) => {
 		callback(response);
 	});
 };
 
 
-function removeObject(key, objstore_name, db_name, db_obj, callback) {
-	makeRequest(key, objstore_name, db_name, db_obj, "delete", (err, success) => {
+function removeObject(key, objstore_name, db_name, callback) {
+	makeRequest(key, objstore_name, db_name, "delete", (err, success) => {
 		callback(success)
 	})
 }
 
 
-
-exports.get = function(key, objstore_name, db_name, db_obj, callback) {
-	getObject(key, objstore_name, db_name, db_obj, (err, object) => {
+/* consider function rewrite*/
+exports.get = function(key, objectStoreName, dBName, callback) {
+	getObject(key, objectStoreName, dBName, (err, object) => {
 		callback(object);
 	});
 };
 		
 
-exports.getAll = function(objstore_name, db_name, db_obj, callback) {
-	getObjectStore(objstore_name, objstore_name, db_name, db_obj, (err, object) => {
+/* this function can return hugh quantitiy of data, offer cursor function */
+exports.getObjectStore = function(objstore_name, db_name, callback) {
+	getObjectStore(objstore_name, objstore_name, db_name, (err, object) => {
 		callback(object);
 	});
 };
 		
-
-exports.put = function(object, objstore_name, db_name, db_obj, callback) {
-	commitObject(object, objstore_name, db_name, db_obj, (err, success) => {
-		callback(success);
-	});			
+/*put expects first arg to be array of data or single data, a callback, and an optional objectstore and dbname */
+exports.put = const put = function() {
+	let objectStoreName, dBName, callback, obj = arguments[0];
+	if (arguments.length == 4) {
+		objectStoreName = arguments[1];
+		dBName = arguments[2];
+		callback = arguments[3];
+	} else if (obj.objectstore) {
+		objectStoreName = obj.objectstore;
+		dBName = obj.dbname;		
+		callback = arguments[1];
+	} else {
+		objectStoreName = 'objStore';
+		dBName = 'simpleDB';
+		callback = arguments[1];
+	}
+	if (typeof obj === 'array') {
+		let success;
+		for (let to_store of obj) {
+			commitObject(to_store, objectStoreName, dBName, (err, success) => {
+				if (err) {
+					callback(err, success);
+				}
+			})	
+		}
+		callback(null, success);
+	} else {
+		commitObject(obj, objectStoreName, dBName, (err, success) => {
+			arguments[1](err, success);
+	 	}		
+	}
 };
 
 
-exports.putMult = function(array, objstore_name, db_name, db_obj, callback) {
-	commitMultipleObjects(array, objstore_name, db_name, db_obj, (err, success) => {
-		callback(success);
-	});			
-};
-
-
-exports.remove = function(key, objstore_name, db_name, db_obj, callback) {
-	removeObject(key, objstore_name, db_name, db_obj, (err, success) => {
-		callback(success);
+exports.remove = function(key, objstore_name, db_name, callback) {
+	removeObject(key, objstore_name, db_name, (err, success) => {
+		callback(err, success);
 	});
 };
 
@@ -309,3 +353,4 @@ exports.delDatabase = function(name) {
 		error("No database with name: " + name);
 	}
 };
+
