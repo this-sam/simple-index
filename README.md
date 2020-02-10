@@ -164,7 +164,7 @@ simpleIndex.get(key, (err, data) => {
 ```
 remove(key or key object, objectStore_name(optional), database_name(optional), callback(err, success))
 ```
-Much like the get funciton, remove can be used with three options. Rather than returning data however, success will either be true if the data was succefully removed from the database or false if it wasn’t able to be removed (perhaps because it didn’t exist).  
+Much like the get function, remove can be used with three options. Rather than returning data however, success will either be true if the data was succefully removed from the database or false if it wasn’t able to be removed (perhaps because it didn’t exist).  
 
 
 ### Creating the simple-index.config.js file.
@@ -187,17 +187,17 @@ The simple-index package will automatically search for and use the config file t
 
 
 Other options that can be included in the config file:
-
+```
 mode: "either development or production",
-
+```
 "development" mode will print errors to the console. "production" silences those errors. simple-index will generally work aroung errors, however, it's helpful to understand what's happening in the package to create an app that works as intended. Defaults to "production".
-
+```
 simple-on: true or false,
-
+```
 If true, simple-index will create the afformentioned simple database even if another database is described in the config. if false, the simple database will not be created and hence unavailable. Defaults to true.
 
 
-A simple-index.config.js file may be configured to look:
+A simple-index.config.js file could be written like this:
 ```javascript
 module.exports = {
 	schema: {
