@@ -1,9 +1,9 @@
 # Simple-Index
 An indexedDB wrapper for simplified client side object storage.
 
-simple-index handles the messy verbage of updating database versions and provides straight forward functions needed to interact with the database(s).
+simple-index handles the messy verbiage of updating database versions and provides straight forward functions needed to interact with the database(s).
 
-Once installed, simple-index can be used client side without any configuration. 
+Once installed, simple-index can be used client side without any configuration.
 
 Example:
 ```javascript
@@ -12,7 +12,7 @@ import simpleIndex from "simple-index";
 const obj_to_store = {
 	title: "foo",
 	author: "bar",
-	key: "book: foo" // this attribute is nessecary if not using a config file
+	key: "book: foo" // this attribute is necessary if not using a config file
 }
 
 simpleIndex.put(obj_to_store, (err, success) => {
@@ -35,18 +35,29 @@ simpleIndex.get("book: foo", (err, obj) => {
 });
 ```
 
-Simple-index handles all the excessive verbiage of upgrading database versions and provides simple functions to store, access, update and remove data from the indexedDB. It utilizes an optional config file for describing and customizing database(s) structures. 
+Simple-index handles all the excessive verbiage of upgrading database versions and provides simple functions to store, access, update and remove data from the indexedDB. It utilizes an optional config file for describing and customizing database(s) structures.
 
 
-### Functions:
+## Functions:
+
+### put
+*Syntax:*
 ```
-put(object, objectStore name(optional), database name(optional), callback(err, success))
+put(object, [objectStoreName, databaseName,] callback(err, success))
 ```
+
+*Parameters:*
+`object` - object to be put
+`objectStoreName` - the name of the object store to use
+`databaseName` - the name of the database in question
+`callback` - a callback function which expects an err or success
+
+
 There are three options for using the put function. Which method to use depends on the config file and the object to be stored.
 If using the included simple database, no objectStore_name or database_name is required. The object must have a property with the key  ‘key’, and a unique value that can be used to retrieve the object. For example:
 ```javascript
 const object_to_store = {
-	key: "favorites", // this property is neseccary
+	key: "favorites", // this property is necessary
 	color: "teal",
 	pets: "chihuahua",
 	flower: "daisy"
@@ -108,6 +119,7 @@ simpleIndex.put(object_to_store, (err, success) => {
 
 Remember to include a key property, as described in the config file, as a property of the object to be stored.
 
+### get
 ```
 get(key or key object, objectStore_name(optional), database_name(optional), callback(err, data))
 ```
@@ -166,7 +178,7 @@ remove(key or key object, objectStore_name(optional), database_name(optional), c
 ```
 Much like the get function, remove can be used with three options. Rather than returning data however, success will either be true if the data was succefully removed from the database or false if it wasn’t able to be removed (perhaps because it didn’t exist).  
 
-
+## Configuration
 ### Creating the simple-index.config.js file.
 
 For developers who need a more robust database with many objectStores, or even multiple databases, includ a config file in the root of the app and describe the desired database schema thusly:
@@ -183,7 +195,7 @@ module.exports = {
 }
 ```
 
-The simple-index package will automatically search for and use the config file to construct the database(s) in the indexedDB. 
+The simple-index package will automatically search for and use the config file to construct the database(s) in the indexedDB.
 
 
 Other options that can be included in the config file:
