@@ -48,12 +48,12 @@ put(object, [objectStoreName, databaseName,] callback(err, success))
 
 *Parameters:*
 `object` - object to be put
-`objectStoreName` - the name of the object store to use
-`databaseName` - the name of the database in question
-`callback` - a callback function which expects an err or success
+`objectStoreName` - the name of the objectStore to use
+`databaseName` - the name of the database to use
+`callback` - a callback function which expects an err string and success boolean
 
 
-There are three options for using the put function. Which method to use depends on the config file and the object to be stored.
+There are three options for using the `<put>` function. Which method to use depends on the config file and the object to be stored.
 If using the included simple database, no objectStore_name or database_name is required. The object must have a property with the key  ‘key’, and a unique value that can be used to retrieve the object. For example:
 ```javascript
 const object_to_store = {
@@ -96,7 +96,7 @@ simpleIndex.put(object_to_store, objectStore, database, (err, success) => {
 });
 ```
 
-Or as properties of the object to be saved:
+Or as properties of the object to be stored:
 ```javascript
 const object_to_store = {
 	key: "favorites",
@@ -120,10 +120,18 @@ simpleIndex.put(object_to_store, (err, success) => {
 Remember to include a key property, as described in the config file, as a property of the object to be stored.
 
 ### get
+*Syntax:*
 ```
-get(key or key object, objectStore_name(optional), database_name(optional), callback(err, data))
+get(key, objectStoreName, databaseName, callback(err, data))
 ```
-get works similarly to put. There are three options of using it. As with put it depends on the config file and the object to be retrieved.
+
+*Parameters:*
+`key` - either the key of the object to get, or a key object with properties key, objectStore and database
+`objectStoreName` - the name of the objectStore to use
+`databaseName` - the name of the database to use
+`callback` - a callback function which expects an err string and data object 
+
+`<get>` works similarly to put. There are three options, and as with `<put>` it depends on the config file and the object to be retrieved.
 If using the included simple database, no objectStore_name or database_name is required. The key argument is required. For example:
 ```javascript
 const key = "favorites";
@@ -173,15 +181,24 @@ simpleIndex.get(key, (err, data) => {
 	};
 });
 ```
+###remove
+*Syntax:*
 ```
-remove(key or key object, objectStore_name(optional), database_name(optional), callback(err, success))
+remove(key, [objectStoreName, databaseName,] callback(err, success))
 ```
-Much like the get function, remove can be used with three options. Rather than returning data however, success will either be true if the data was succefully removed from the database or false if it wasn’t able to be removed (perhaps because it didn’t exist).  
+
+*Parameters:*
+`key` - either the key of the object to be removed, or a key object with properties key, objectStore and database.
+`objectStoreName` - the name of the objectStore to use
+`databaseName` - the name of the database to use
+`callback` - a callback function which expects an err string and success boolean
+
+Much like the `<get>` function, `<remove>` can be used with three options. Rather than returning data however, success will either be true if the data was succefully removed from the database or false if it wasn’t able to be removed (perhaps because it didn’t exist).  
 
 ## Configuration
 ### Creating the simple-index.config.js file.
 
-For developers who need a more robust database with many objectStores, or even multiple databases, includ a config file in the root of the app and describe the desired database schema thusly:
+For developers who need a more robust database with many objectStores, or even multiple databases, include a config file in the root of the app and describe the desired database schema thusly:
 
 ```javascript
 module.exports = {
@@ -195,19 +212,26 @@ module.exports = {
 }
 ```
 
-The simple-index package will automatically search for and use the config file to construct the database(s) in the indexedDB.
+The simple-index package will automatically search for and use the config file to construct the database(s) in the indexedDB. The prefered place to save the file is in the root of the app. If using a bundler such as webpack, a resolve alias will need to be included in the webpack config file:
+```
+resolve: {
+        alias: {
+            'simple-index.config$' : path.resolve(__dirname, 'simple-index.config.js')
+        }
+    },
+```
 
+*Other Config File Options:*
 
-Other options that can be included in the config file:
 ```
 mode: "either development or production",
 ```
 "development" mode will print errors to the console. "production" silences those errors. simple-index will generally work aroung errors, however, it's helpful to understand what's happening in the package to create an app that works as intended. Defaults to "production".
+
 ```
 simple-on: true or false,
 ```
 If true, simple-index will create the afformentioned simple database even if another database is described in the config. if false, the simple database will not be created and hence unavailable. Defaults to true.
-
 
 A simple-index.config.js file could be written like this:
 ```javascript
