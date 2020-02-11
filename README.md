@@ -38,18 +38,20 @@ simpleIndex.get("book: foo", (err, obj) => {
 Simple-index handles all the excessive verbiage of upgrading database versions and provides simple functions to store, access, update and remove data from the indexedDB. It utilizes an optional config file for describing and customizing database(s) structures.
 
 
-### Functions:
+## Functions:
 
-#### put
+### put
 *Syntax:*
 ```
 put(object, [objectStoreName, databaseName,] callback(err, success))
 ```
+
 *Parameters:*
 `object` - object to be put
 `objectStoreName` - the name of the object store to use
 `databaseName` - the name of the database in question
 `callback` - a callback function which expects an err or success
+
 
 There are three options for using the put function. Which method to use depends on the config file and the object to be stored.
 If using the included simple database, no objectStore_name or database_name is required. The object must have a property with the key  ‘key’, and a unique value that can be used to retrieve the object. For example:
@@ -117,7 +119,7 @@ simpleIndex.put(object_to_store, (err, success) => {
 
 Remember to include a key property, as described in the config file, as a property of the object to be stored.
 
-#### get
+### get
 ```
 get(key or key object, objectStore_name(optional), database_name(optional), callback(err, data))
 ```
@@ -176,7 +178,7 @@ remove(key or key object, objectStore_name(optional), database_name(optional), c
 ```
 Much like the get function, remove can be used with three options. Rather than returning data however, success will either be true if the data was succefully removed from the database or false if it wasn’t able to be removed (perhaps because it didn’t exist).  
 
-
+## Configuration
 ### Creating the simple-index.config.js file.
 
 For developers who need a more robust database with many objectStores, or even multiple databases, includ a config file in the root of the app and describe the desired database schema thusly:
