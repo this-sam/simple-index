@@ -1,21 +1,21 @@
 "use strict";
 
 
-let config;
+let CONFIG;
 
 /* this seems an odd hack to allow the package to require config with and without webpack. consider better code */
 try{
-	config = require('simple-index.config');	
+	CONFIG = require('simple-index.config');	
 }
 catch(e) {
 	try {
 		let config_path = '../../../'
-		config = require(config_path + 'simple-index.config');
+		CONFIG = require(config_path + 'simple-index.config');
 	}
 	catch(e) {
 		try {
 			let config_path = './'
-			config = require(config_path + 'simple-index.config');
+			CONFIG = require(config_path + 'simple-index.config');
 		}
 		catch(e) {
 			error("simple-index.config.js not found (ignore this error if not using a config file). If using a config file, try placing it in the root folder of the app. If this error still occurs, try placing it in the root folder of the simple-index module with the index.js file. If using webpack, include a resolve alias in the webpack.config.js file.");
@@ -36,25 +36,36 @@ const simpleDB = {
 };
 
 let mode;
-if (config.mode) {
- 	mode = config.mode;
+if (CONFIG.mode) {
+ 	mode = CONFIG.mode;
 } else {
 	mode = 'production';
 };
 
 let simple_on = true;
-if (config.simple_on === false)  {
+if (CONFIG.simple_on === false)  {
 	simple_on = false
 }
 	
 if (simple_on) {
-	if (!config) {
-		config = simpleDB;
+	if (!CONFIG) {
+		CONFIG = simpleDB;
 	} else {
-		config.schema['simpleDB'] = simpleDB.schema['simpleDB']
+		CONFIG.schema['simpleDB'] = simpleDB.schema['simpleDB']
 	};
 }
 
+
+function configureCache() {
+	const promise = indexedDB.databases();
+	promise.then(databases => {
+		for (let database in databases) {
+			if (typeof CONFIG.schema[database] === 'undefined') {
+				window.indexedDB.deleteDatabase(database);
+			};
+		};
+	});
+};
 
 function error(message) {
 	if (mode === "development") {
@@ -89,7 +100,7 @@ function getCache(db_name, callback) {
 			
 			objectStore.transaction.oncomplete = function(event) {
 				const cacheObjectStore = cache_db.transaction("cache", "readwrite").objectStore("cache");
-				for (let db_obj_name in config.schema) {
+				for (let db_obj_name in CONFIG.schema) {
 					let new_db_obj_cache = {
 						version: 0,
 						name: db_obj_name,
@@ -139,11 +150,11 @@ function getCache(db_name, callback) {
 				cache_objectStore.put(cached_db_obj);
 				window.indexedDB.deleteDatabase(db_name);
 			};
-			console.log(JSON.stringify(cached_db_obj.current) != JSON.stringify(config.schema[db_name]));
-			if (JSON.stringify(cached_db_obj.current) != JSON.stringify(config.schema[db_name])) {
+			console.log(JSON.stringify(cached_db_obj.current) != JSON.stringify(CONFIG.schema[db_name]));
+			if (JSON.stringify(cached_db_obj.current) != JSON.stringify(CONFIG.schema[db_name])) {
 				cached_db_obj.version += 1;
 				cached_db_obj.previous = cached_db_obj.current;
-				cached_db_obj.current = config.schema[db_name];
+				cached_db_obj.current = CONFIG.schema[db_name];
 				cache_objectStore.put(cached_db_obj);
 			};
 			callback(cached_db_obj);
@@ -386,3 +397,5 @@ exports.delDatabase = function(name) {
 	}
 };
 
+
+configureCache();
