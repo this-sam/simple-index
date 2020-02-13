@@ -138,8 +138,9 @@ function getCache(db_name, callback) {
 				};
 				cache_objectStore.put(cached_db_obj);
 				window.indexedDB.deleteDatabase(db_name);
-			}
-			if (cached_db_obj.current != config.schema[db_name]) {
+			};
+			console.log(JSON.stringify(cached_db_obj.current) != JSON.stringify(config.schema[db_name]));
+			if (JSON.stringify(cached_db_obj.current) != JSON.stringify(config.schema[db_name])) {
 				cached_db_obj.version += 1;
 				cached_db_obj.previous = cached_db_obj.current;
 				cached_db_obj.current = config.schema[db_name];
@@ -176,6 +177,18 @@ function openDatabase(cache_db, callback) {
 					catch(e) {
 						error("no objectStore " + objStore + " in database " + cache_db.name);
 					}	
+				} else {
+					for (let index in cache_db.previous[objStore].indexes) {
+						if (typeof cache_db.previous[objStore].indexes[index] === 'undefined') {
+							try {
+								const objectStore = db.transaction(objStore, "readwrite").objectStore(objStore);
+								objectStore.deleteIndex(index);
+							}
+							catch(e) {
+								error("no index " + index + " in objectStore " + objStore);
+							}
+						};
+					};
 				};
 			}; 
 			
@@ -190,6 +203,14 @@ function openDatabase(cache_db, callback) {
 				}
 				catch(e) {
 					error("objectstore " + objStore + " already in database " + cache_db.name);
+					for (let index in cache_db.current[objStore].indexes) {
+						try {
+							objectStore.createIndex(objStore_index, objStore_index, {unique: cache_db.current[objStore].indexes[objStore_index]});
+						}
+						catch(e) {
+							error(index + " index already exists in objectStore " + objStore);
+						}
+					};
 				}	
 			};
 		};
@@ -209,8 +230,8 @@ function openTransaction(db, objstore_name, callback) {
 	const transaction = db.transaction(objstore_name, "readwrite");
 
 	transaction.onerror = function(event) {
-		databaseOnError(event)
-	} 
+		databaseOnError(event);
+	}; 
 
 	callback(transaction);
 };
