@@ -224,7 +224,7 @@ resolve: {
 *Other Config File Options:*
 
 ```
-mode: "either development or production",
+mode: either "development" or "production",
 ```
 "development" mode will print errors to the console. "production" silences those errors. simple-index will generally work aroung errors, however, it's helpful to understand what's happening in the package to create an app that works as intended. Defaults to "production".
 
@@ -232,6 +232,11 @@ mode: "either development or production",
 simple-on: true or false,
 ```
 If true, simple-index will create the afformentioned simple database even if another database is described in the config. if false, the simple database will not be created and hence unavailable. Defaults to true.
+
+```
+delete: [],
+```
+An array of database names that should be removed from previous versions of indexedDB. This config option exists to ensure possibly large databases that are no longer required are removed.
 
 A simple-index.config.js file could be written like this:
 ```javascript
@@ -256,5 +261,6 @@ module.exports = {
 	},
 	mode: "development",
 	simple-on: false,
+	delete: ["oldDB", "yet_another_oldDB"],
 };
 ```

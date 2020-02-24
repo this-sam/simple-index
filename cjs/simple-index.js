@@ -31,6 +31,7 @@ const simpleDB = {
 			},
 		}
 	},
+	delete: [],
 	mode : 'production',
 	simple_on : true
 };
@@ -55,17 +56,38 @@ if (simple_on) {
 	};
 }
 
-
+// TODO: this function will provide a more reliable and less intrusive way of removing old databases. 
 function configureCache() {
-	const promise = indexedDB.databases();
-	promise.then(databases => {
-		for (let database in databases) {
-			if (typeof CONFIG.schema[database] === 'undefined') {
+
+	if(CONFIG.delete) {
+		for(let database in CONFIG.delete) {
+			try{
 				window.indexedDB.deleteDatabase(database);
-			};
+			}
+			catch(e){};
 		};
-	});
+	};
+
+	if(!simple_on) {
+		try{
+			window.indexedDB.deleteDatabase("simpleDB")
+		}
+		catch(e){};
+	};
+
+
+// Many browsers currently don't support databases, see https://bugzilla.mozilla.org/show_bug.cgi?id=934640
+	// const promise = window.indexedDB.databases();
+	// console.log(promise);
+	// promise.then(databases => {
+	// 	for (let database in databases) {
+	// 		if (typeof CONFIG.schema[database] === 'undefined') {
+	// 			window.indexedDB.deleteDatabase(database);
+	// 		};
+	// 	};
+	// });
 };
+
 
 function error(message) {
 	if (mode === "development") {
@@ -150,7 +172,6 @@ function getCache(db_name, callback) {
 				cache_objectStore.put(cached_db_obj);
 				window.indexedDB.deleteDatabase(db_name);
 			};
-			console.log(JSON.stringify(cached_db_obj.current) != JSON.stringify(CONFIG.schema[db_name]));
 			if (JSON.stringify(cached_db_obj.current) != JSON.stringify(CONFIG.schema[db_name])) {
 				cached_db_obj.version += 1;
 				cached_db_obj.previous = cached_db_obj.current;
@@ -203,12 +224,15 @@ function openDatabase(cache_db, callback) {
 				};
 			}; 
 			
+
 			for (let objStore in cache_db.current) {
 				try{
 					let objectStore = db.createObjectStore(objStore, { keyPath: cache_db.current[objStore].keyPath});
-					if (cache_db.current[objStore].indexes) {
-						for (let objStore_index in cache_db.current[objStore].indexes) {
-							objectStore.createIndex(objStore_index, objStore_index, {unique: cache_db.current[objStore].indexes[objStore_index]});
+					objectStore.transaction.oncomplete = function(event) {
+						if (cache_db.current[objStore].indexes) {
+							for (let objStore_index in cache_db.current[objStore].indexes) {
+								objectStore.createIndex(objStore_index, objStore_index, {unique: cache_db.current[objStore].indexes[objStore_index]});
+							};
 						};
 					};
 				}
@@ -261,7 +285,6 @@ function openObjectStore(transaction, objstore_name, callback) {
 
 function openDBRequest(objstore, db_request, arg, callback) {
 	try {
-		console.log(objstore);
 		const request = objstore[db_request](arg);
 
 		request.onerror = function(event) {
@@ -276,6 +299,7 @@ function openDBRequest(objstore, db_request, arg, callback) {
 	}
 	catch(e) {
 		error("No such request: " + db_request);
+		error("Perhaps check config file for mistakes.")
 		callback(null, null);
 	};
 }; 
@@ -332,7 +356,9 @@ function removeObject(key, objstore_name, db_name, callback) {
 
 
 /* consider function rewrite*/
-exports.get = function(key, objectStoreName, dBName, callback) {
+const get = exports.get = function() {
+	let objectStoreName, dBName, callback;
+	let key = arguments[0];
 	getObject(key, objectStoreName, dBName, (err, object) => {
 		callback(err, object);
 	});
@@ -349,7 +375,8 @@ exports.getObjectStore = function(objstore_name, db_name, callback) {
 		
 /*put expects first arg to be array of data or single data, a callback, and an optional objectstore and dbname */
 const put = exports.put = function() {
-	let objectStoreName, dBName, callback, obj = arguments[0];
+	let objectStoreName, dBName, callback;
+	let obj = arguments[0];
 	if (arguments.length == 4) {
 		objectStoreName = arguments[1];
 		dBName = arguments[2];
