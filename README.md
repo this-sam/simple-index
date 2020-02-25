@@ -48,9 +48,13 @@ put(object, [objectStoreName, databaseName,] callback(err, success))
 
 *Parameters:*
 `object` - object to be put
+
 `objectStoreName` - the name of the objectStore to use
+
 `databaseName` - the name of the database to use
+
 `callback` - a callback function which expects an err string and success boolean
+
 
 
 There are three options for using the `<put>` function. Which method to use depends on the config file and the object to be stored.
@@ -127,9 +131,13 @@ get(key, objectStoreName, databaseName, callback(err, data))
 
 *Parameters:*
 `key` - either the key of the object to get, or a key object with properties key, objectStore and database
+
 `objectStoreName` - the name of the objectStore to use
+
 `databaseName` - the name of the database to use
-`callback` - a callback function which expects an err string and data object 
+
+`callback` - a callback function which expects an err string and data object
+
 
 `<get>` works similarly to put. There are three options, and as with `<put>` it depends on the config file and the object to be retrieved.
 If using the included simple database, no objectStore_name or database_name is required. The key argument is required. For example:
@@ -189,9 +197,13 @@ remove(key, [objectStoreName, databaseName,] callback(err, success))
 
 *Parameters:*
 `key` - either the key of the object to be removed, or a key object with properties key, objectStore and database.
+
 `objectStoreName` - the name of the objectStore to use
+
 `databaseName` - the name of the database to use
+
 `callback` - a callback function which expects an err string and success boolean
+
 
 Much like the `<get>` function, `<remove>` can be used with three options. Rather than returning data however, success will either be true if the data was succefully removed from the database or false if it wasn’t able to be removed (perhaps because it didn’t exist).  
 
