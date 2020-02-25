@@ -341,13 +341,6 @@ function getObject(key, objstore_name, db_name, callback){
 };
 
 
-function getObjectStore(objstore_name, db_name, callback) {
-	makeRequest(null, objstore_name, db_name, 'getAll', (err, response) => {
-		callback(err, response);
-	});
-};
-
-
 function removeObject(key, objstore_name, db_name, callback) {
 	makeRequest(key, objstore_name, db_name, "delete", (err, success) => {
 		callback(err, success)
@@ -355,20 +348,16 @@ function removeObject(key, objstore_name, db_name, callback) {
 }
 
 
-/* consider function rewrite*/
-const get = exports.get = function() {
-	let objectStoreName, dBName, callback;
-	let key = arguments[0];
-	getObject(key, objectStoreName, dBName, (err, object) => {
-		callback(err, object);
+function getObjectStore(objstore_name, db_name, callback) {
+	makeRequest(null, objstore_name, db_name, 'getAll', (err, response) => {
+		callback(err, response);
 	});
 };
-		
 
 /* this function can return hugh quantitiy of data, offer cursor function */
-exports.getObjectStore = function(objstore_name, db_name, callback) {
-	getObjectStore(objstore_name, objstore_name, db_name, (err, object) => {
-		callback(err, object);
+getObjectStoreCursor = function(objstore_name, db_name, callback) {
+	getObjectStore(objstore_name, objstore_name, db_name, (err, arrayGen) => {
+		callback(err, arrayGen);
 	});
 };
 		
@@ -389,24 +378,56 @@ const put = exports.put = function() {
 		objectStoreName = 'objStore';
 		dBName = 'simpleDB';
 		callback = arguments[1];
-	}
+	};
 	if (typeof obj === 'array') {
 		let success;
 		for (let to_store of obj) {
 			commitObject(to_store, objectStoreName, dBName, (err, success) => {
 				if (err) {
 					callback(err, success);
-				}
-			})	
-		}
+				};
+			});	
+		};
 		callback(null, success);
 	} else {
 		commitObject(obj, objectStoreName, dBName, (err, success) => {
 			callback(err, success);
-	 	})
-	}
+	 	});
+	};
 };
 
+const get = exports.get = function() {
+	let objectStoreName, dBName, callback;
+	let key = arguments[0];
+	if (arguments.length == 4) {
+		objectStoreName = arguments[1];
+		dBName = arguments[2];
+		callback = arguments[3];
+	} else if (key.objectstore) {
+		objectStoreName = key.objectstore;
+		dBName = key.dbname;		
+		callback = arguments[1];
+	} else {
+		objectStoreName = 'objStore';
+		dBName = 'simpleDB';
+		callback = arguments[1];
+	};
+	if (typeof key === objectStoreName) {
+		let success;
+		for (let to_get of key) {
+			getObject(to_get, objectStoreName, dBName, (err, object) => {
+				if (err) {
+					callback(err, null);
+				};
+				callback(err, object);
+			});
+		};
+	} else {
+		getObject(key, objectStoreName, dBName, (err, object) => {
+			callback(err, object);
+		});
+	};
+};
 
 exports.remove = function(key, objstore_name, db_name, callback) {
 	removeObject(key, objstore_name, db_name, (err, success) => {
